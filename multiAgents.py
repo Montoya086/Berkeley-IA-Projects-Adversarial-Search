@@ -28,6 +28,9 @@ class ReflexAgent(Agent):
     headers.
     """
 
+    def __init__(self):
+        # Save the history of visited positions for penalizing revisits
+        self.positionHistory = set()
 
     def getAction(self, gameState):
         """
@@ -51,30 +54,59 @@ class ReflexAgent(Agent):
 
         return legalMoves[chosenIndex]
 
+    def updatePositionHistory(self, newPos):
+        if newPos in self.positionHistory:
+            return -100  # Penalty for revisiting a position
+        else:
+            self.positionHistory.add(newPos)
+            return 0  # No penalty
+
     def evaluationFunction(self, currentGameState, action):
-        """
-        Design a better evaluation function here.
-
-        The evaluation function takes in the current and proposed child
-        GameStates (pacman.py) and returns a number, where higher numbers are better.
-
-        The code below extracts some useful information from the state, like the
-        remaining food (newFood) and Pacman position after moving (newPos).
-        newScaredTimes holds the number of moves that each ghost will remain
-        scared because of Pacman having eaten a power pellet.
-
-        Print out these variables to see what you're getting, then combine them
-        to create a masterful evaluation function.
-        """
-        # Useful information you can extract from a GameState (pacman.py)
+        # Basic information
         childGameState = currentGameState.getPacmanNextState(action)
         newPos = childGameState.getPacmanPosition()
         newFood = childGameState.getFood()
         newGhostStates = childGameState.getGhostStates()
-        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        return childGameState.getScore()
+        # Evaluate distance to nearest food
+        foodList = newFood.asList()
+        if foodList:
+            minFoodDistance = min(util.manhattanDistance(newPos, food) for food in foodList)
+        else:
+            minFoodDistance = 0  # No food left
+
+        # Evaluate distance to nearest ghost
+        ghostPenalty = 0
+        for ghostState in newGhostStates:
+            ghostDistance = util.manhattanDistance(newPos, ghostState.getPosition())
+            if ghostState.scaredTimer == 0 and ghostDistance < 2:
+                ghostPenalty -= 500  # Penalty for getting too close to a ghost
+            elif ghostDistance < 2:
+                ghostPenalty += 150  # Reward for getting close to a scared ghost
+
+        # Penalty for stopping
+        if action == 'Stop':
+            stopPenalty = -300
+        else:
+            stopPenalty = 0
+
+        # Consider the number of legal actions
+        numLegalActions = len(childGameState.getLegalActions())
+        if numLegalActions > 2:
+            mobilityReward = 10
+        else:
+            mobilityReward = -10  # Penalty for getting stuck
+
+        # Penalty for revisiting a position
+        positionPenalty = self.updatePositionHistory(newPos)
+
+        # Bonus for exploration
+        explorationBonus = len(self.positionHistory)
+
+        # Evaluate the score
+        score = (childGameState.getScore() + 2 * mobilityReward + ghostPenalty
+                - minFoodDistance + stopPenalty + positionPenalty + explorationBonus)
+        return score
 
 def scoreEvaluationFunction(currentGameState):
     """
