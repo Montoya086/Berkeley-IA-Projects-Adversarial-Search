@@ -264,9 +264,85 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         All ghosts should be modeled as choosing uniformly at random from their
         legal moves.
+        
+        Args:
+            gameState: current game state
+            
+        Returns:
+            The best action for the agent to take
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        actions = gameState.getLegalActions(0)
+        maxAction = 'Stop'
+        maxResult = float('-inf')
+        
+        for a in actions:
+            # Agente con indice == 0 juega primero
+            successor = gameState.getNextState(0, a)
+            # Agente con indice == 1 (el primer fantasma) juega siguiente
+            currentResult = self.chanceExpect(successor, 0, 1)
+            
+            if currentResult > maxResult:
+                maxResult = currentResult
+                maxAction = a
+                
+        return maxAction
+    
+    def maxExpect(self, gameState, currDepth):
+        """
+        Devuelve el valor maximo esperado para un estado de juego y una profundidad dada.
+
+        Args:
+            gameState: estado actual del juego
+            currDepth: profundidad actual en el arbol de juego
+
+        Returns:
+            El valor maximo esperado para el estado del juego
+        """
+        if gameState.isWin() or gameState.isLose() or currDepth == self.depth:
+            return self.evaluationFunction(gameState)
+        
+        actions = gameState.getLegalActions(0)
+        successors = []
+        
+        for a in actions:
+            successors.append( gameState.getNextState(0, a) )
+            
+        # Agente con indice == 1 (el primer fantasma) juega a continuacion
+        valoresEsperados = [self.chanceExpect(s, currDepth, 1) for s in successors]
+        
+        return max(valoresEsperados)
+
+    def chanceExpect(self, gameState, currDepth, currAgent):
+        """
+        Devuelve el valor esperado para un estado de juego, una profundidad y un agente dado.
+        
+        Args:
+            gameState: estado actual del juego
+            currDepth: profundidad actual en el arbol de juego
+            currAgent: agente actual
+
+        Returns:
+            El valor esperado para el estado del juego
+        """
+        if gameState.isWin() or gameState.isLose() or currDepth == self.depth:
+            return self.evaluationFunction(gameState)
+        
+        actions = gameState.getLegalActions(currAgent)
+        successors = []
+        
+        for a in actions:
+            # Se obtienen los sucesores del estado actual
+            successors.append( gameState.getNextState(currAgent, a) )
+            
+        if currAgent < gameState.getNumAgents() - 1:
+            # Aun hay fantasmas que deben elegir sus movimientos, por lo que se aumenta el indice del agente y se llama a chanceExpect nuevamente
+            return sum( [self.chanceExpect(s, currDepth, currAgent + 1 ) for s in successors ] )/len(successors)
+        
+        else:
+            # La profundidad se aumenta cuando es el turno de MAX
+            valoresMax = sum([self.maxExpect(s, currDepth + 1 ) for s in successors]) / len(successors)
+            return valoresMax
+
 
 def betterEvaluationFunction(currentGameState):
     """
