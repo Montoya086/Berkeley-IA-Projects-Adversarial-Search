@@ -213,6 +213,19 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the action for the alpha-beta agent using self.depth and self.evaluationFunction
         """
         def alpha_beta(agentIndex, depth, gameState, alpha, beta):
+            """
+            Funcion recursiva de poda alfa-beta para minimax.
+
+            Args:
+                agentIndex: indice del agente actual (0 para el jugador, otros indices para adversarios)
+                depth: profundidad actual de la recursion
+                gameState: estado actual del juego en la recursion
+                alpha: valor alfa para la poda
+                beta: valor beta para la poda
+
+            Returns:
+                El valor de la funcion de evaluacion para los nodos hoja, o el mejor valor calculado para los nodos interiores.
+            """
             if gameState.isWin() or gameState.isLose() or depth == self.depth:
                 return self.evaluationFunction(gameState)
             
@@ -222,6 +235,19 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 return min_value(agentIndex, depth, gameState, alpha, beta)
             
         def max_value(agentIndex, depth, gameState, alpha, beta):
+            """
+            Calcula el valor maximo para los movimientos del jugador.
+
+            Args:
+                agentIndex: indice del jugador actual (siempre 0 para el jugador)
+                depth: profundidad actual de la recursion
+                gameState: estado actual del juego en la recursion
+                alpha: valor alfa para la poda
+                beta: valor beta para la poda
+
+            Returns:
+                El valor maximo encontrado para este nodo o la accion asociada si la profundidad es 0.
+            """
             maxValue = float("-inf")
             bestAction = None
             for action in gameState.getLegalActions(agentIndex):
@@ -236,6 +262,19 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             return bestAction if depth == 0 else maxValue
         
         def min_value(agentIndex, depth, gameState, alpha, beta):
+            """
+            Calcula el valor minimo para los movimientos de los fantasmas.
+
+            Args:
+                agentIndex: indice del agente adversario
+                depth: profundidad actual de la recursion
+                gameState: estado actual del juego en la recursion
+                alpha: valor alfa para la poda
+                beta: valor beta para la poda
+
+            Returns:
+                El valor minimo encontrado para este nodo.
+            """
             minValue = float("inf")
             nextAgent = agentIndex + 1
             nextDepth = depth + 1 if nextAgent >= gameState.getNumAgents() else depth
@@ -260,16 +299,15 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
     def getAction(self, gameState):
         """
-        Returns the expectimax action using self.depth and self.evaluationFunction
+        Retorna el mejor movimiento para el agente en el estado actual del juego.
 
-        All ghosts should be modeled as choosing uniformly at random from their
-        legal moves.
+        Todos los fantasmas deben ser modelados como eligiendo uniformemente al azar entre sus movimientos legales.
         
         Args:
-            gameState: current game state
+            gameState: estado actual del juego
             
         Returns:
-            The best action for the agent to take
+            El mejor movimiento para el agente en el estado actual del juego
         """
         actions = gameState.getLegalActions(0)
         maxAction = 'Stop'
